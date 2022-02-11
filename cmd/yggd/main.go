@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -103,7 +104,7 @@ func main() {
 		},
 		&cli.StringFlag{
 			Name:  cliClientID,
-			Usage: "Use `VALUE` as the client ID when connecting",
+			Usage: "Use `VALUE` as the client ID when connecting. Should only contain the characters '[a-zA-Z0-9]'",
 		},
 		altsrc.NewStringSliceFlag(&cli.StringSliceFlag{
 			Name:  cliExcludeWorker,
@@ -201,6 +202,14 @@ func main() {
 			}
 			if err := setClientID([]byte(CN), clientIDFile); err != nil {
 				return cli.Exit(fmt.Errorf("cannot set client-id to CN: %w", err), 1)
+			}
+		}
+
+		if DefaultConfig.ClientID != "" {
+			var isCompliantClientID = regexp.MustCompile(`^[a-zA-Z0-9]+$`).MatchString
+
+			if !isCompliantClientID(DefaultConfig.ClientID) {
+				return cli.Exit("ClientID should contain only the characters '[a-zA-Z0-9]'", 1)
 			}
 		}
 
